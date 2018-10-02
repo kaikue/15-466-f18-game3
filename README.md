@@ -1,11 +1,10 @@
 # Game Information
-(Note: fill in this portion with information about your game.)
 
-Title: (TODO: your game's title)
+Title: Musical Bloom
 
-Author: (TODO: your name)
+Author: Kai Kuehner (design by Shi Johnson-Bey)
 
-Design Document: [TODO: name of design document](TODO: link to design document)
+Design Document: [Musical Bloom](http://graphics.cs.cmu.edu/courses/15-466-f18/game3-designs/ishmaelj/)
 
 Screen Shot:
 
@@ -13,15 +12,27 @@ Screen Shot:
 
 How To Play:
 
-TODO: describe the controls and (if needed) goals/strategy.
+Not actually a real game :(
+
+You can press r, b, g, or y to activate the colored pads, or just watch them activate on their own. They have nice sound effects too.
 
 Changes From The Design Document:
 
-TODO: what did you need to add/remove/modify from the original design? Why?
+I didn't implement the gameplay due to running out of time. I don't think I did the bloom right either, since it is always on and doesn't look like the pads are actually glowing.
 
 Good / Bad / Ugly Code:
 
-TODO: provide examples of code you wrote from this project that you think is good (elegant, simple, useful), bad (hack-y, brittle, unreadable), and ugly (particularly inelegant). Provide a sentence or two of justification for the examples.
+Good: I thought about maybe doing some kind of state-based update system, but couldn't really figure out how to implement it. It might have been good code if I had.
+
+Bad: 
+
+- I didn't implement the gameplay.
+
+- I made the scene by slightly modifying the sample one. I spent hours trying to create my own and failing miserably. Blender is, without exaggeration, the worst computer program I have ever used.
+
+Ugly: All the code for activating the colored pads is copy-pasted 4 times. Not good!
+
+Sound Credit: https://freesound.org/people/Aiwha/sounds/196106/ (pitched in Audacity)
 
 # Changes In This Base Code
 
@@ -74,13 +85,13 @@ Before you dive into the code, it helps to understand the overall structure of t
 The ```meshes/export-meshes.py``` script can write mesh data including a variety of attributes (e.g., *p*ositions, *n*ormals, *c*olors, *t*excoords) from a selected layer of a blend file:
 
 ```
-blender --background --python meshes/export-meshes.py -- meshes/crates.blend:1 dist/crates.pnc
+blender --background --python meshes/export-meshes.py -- meshes/simon.blend:1 dist/simon.pnct
 ```
 
 The ```meshes/export-scene.py``` script can write the transformation hierarchy of the scene from a selected layer of a blend file, and includes references to meshes (by name):
 
 ```
-blender --background --python meshes/export-scene.py -- meshes/crates.blend:1 dist/crates.scene
+blender --background --python meshes/export-scene.py -- meshes/simon.blend:1 dist/simon.scene
 ```
 
 The ```meshes/export-walkmeshes.py``` script can writes vertices, normals, and triangle indicies of all meshes on a selected layer of a .blend file:

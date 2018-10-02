@@ -30,4 +30,12 @@ struct GameMode : public Mode {
 
 	float camera_spin = 0.0f;
 	float spot_spin = 0.0f;
+
+  void activate_spot(int spot);
+
+  int seq_length = 5;
+
+  int state = 0;
+  float state_length = 1.0f;
+  float state_time = 0.0f;
 };

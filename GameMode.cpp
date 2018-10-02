@@ -2,6 +2,7 @@
 
 #include "MenuMode.hpp"
 #include "Load.hpp"
+#include "Sound.hpp"
 #include "MeshBuffer.hpp"
 #include "Scene.hpp"
 #include "gl_errors.hpp" //helper for dumpping OpenGL error messages
@@ -24,7 +25,7 @@
 
 
 Load< MeshBuffer > meshes(LoadTagDefault, [](){
-	return new MeshBuffer(data_path("vignette.pnct"));
+	return new MeshBuffer(data_path("simon.pnct"));
 });
 
 Load< GLuint > meshes_for_texture_program(LoadTagDefault, [](){
@@ -71,13 +72,16 @@ Load< GLuint > blur_program(LoadTagDefault, [](){
 		"		fract(dot(gl_FragCoord.xy ,vec2(12.9898,78.233))),\n"
 		"		fract(dot(gl_FragCoord.xy ,vec2(96.3869,-27.5796)))\n"
 		"	));\n"
-		//do a four-pixel average to blur:
-		"	vec4 blur =\n"
-		"		+ 0.25 * texture(tex, (gl_FragCoord.xy + vec2(ofs.x,ofs.y)) / textureSize(tex, 0))\n"
-		"		+ 0.25 * texture(tex, (gl_FragCoord.xy + vec2(-ofs.y,ofs.x)) / textureSize(tex, 0))\n"
-		"		+ 0.25 * texture(tex, (gl_FragCoord.xy + vec2(-ofs.x,-ofs.y)) / textureSize(tex, 0))\n"
-		"		+ 0.25 * texture(tex, (gl_FragCoord.xy + vec2(ofs.y,-ofs.x)) / textureSize(tex, 0))\n"
-		"	;\n"
+    " vec4 center = texture(tex, gl_FragCoord.xy / textureSize(tex, 0));\n"
+    " vec4 blur = center;\n"
+    " vec4 n1 = texture(tex, (gl_FragCoord.xy + vec2(ofs.x, ofs.y)) / textureSize(tex, 0));\n"
+    " if (n1.length() > 0.9f) blur += 0.3 * n1;\n"
+    " vec4 n2 = texture(tex, (gl_FragCoord.xy + vec2(-ofs.x, ofs.y)) / textureSize(tex, 0));\n"
+    " if (n2.length() > 0.9f) blur += 0.3 * n2;\n"
+    " vec4 n3 = texture(tex, (gl_FragCoord.xy + vec2(ofs.x, -ofs.y)) / textureSize(tex, 0));\n"
+    " if (n3.length() > 0.9f) blur += 0.3 * n3;\n"
+    " vec4 n4 = texture(tex, (gl_FragCoord.xy + vec2(-ofs.x, -ofs.y)) / textureSize(tex, 0));\n"
+    " if (n4.length() > 0.9f) blur += 0.3 * n4;\n"
 		"	fragColor = vec4(blur.rgb, 1.0);\n" //blur;\n"
 		"}\n"
 	);
@@ -120,6 +124,22 @@ Load< GLuint > marble_tex(LoadTagDefault, [](){
 	return new GLuint(load_texture(data_path("textures/marble.png")));
 });
 
+Load< GLuint > marble1_tex(LoadTagDefault, []() {
+  return new GLuint(load_texture(data_path("textures/marble1.png")));
+});
+
+Load< GLuint > marble2_tex(LoadTagDefault, []() {
+  return new GLuint(load_texture(data_path("textures/marble2.png")));
+});
+
+Load< GLuint > marble3_tex(LoadTagDefault, []() {
+  return new GLuint(load_texture(data_path("textures/marble3.png")));
+});
+
+Load< GLuint > marble4_tex(LoadTagDefault, []() {
+  return new GLuint(load_texture(data_path("textures/marble4.png")));
+});
+
 Load< GLuint > white_tex(LoadTagDefault, [](){
 	GLuint tex = 0;
 	glGenTextures(1, &tex);
@@ -135,11 +155,30 @@ Load< GLuint > white_tex(LoadTagDefault, [](){
 	return new GLuint(tex);
 });
 
+Load< Sound::Sample > ding1(LoadTagDefault, []() {
+  return new Sound::Sample(data_path("ding1.wav"));
+});
+
+Load< Sound::Sample > ding2(LoadTagDefault, []() {
+  return new Sound::Sample(data_path("ding2.wav"));
+});
+
+Load< Sound::Sample > ding3(LoadTagDefault, []() {
+  return new Sound::Sample(data_path("ding3.wav"));
+});
+
+Load< Sound::Sample > ding4(LoadTagDefault, []() {
+  return new Sound::Sample(data_path("ding4.wav"));
+});
 
 Scene::Transform *camera_parent_transform = nullptr;
 Scene::Camera *camera = nullptr;
 Scene::Transform *spot_parent_transform = nullptr;
 Scene::Lamp *spot = nullptr;
+Scene::Object *spot1 = nullptr;
+Scene::Object *spot2 = nullptr;
+Scene::Object *spot3 = nullptr;
+Scene::Object *spot4 = nullptr;
 
 Load< Scene > scene(LoadTagDefault, [](){
 	Scene *ret = new Scene;
@@ -159,14 +198,27 @@ Load< Scene > scene(LoadTagDefault, [](){
 
 
 	//load transform hierarchy:
-	ret->load(data_path("vignette.scene"), [&](Scene &s, Scene::Transform *t, std::string const &m){
+	ret->load(data_path("simon.scene"), [&](Scene &s, Scene::Transform *t, std::string const &m){
 		Scene::Object *obj = s.new_object(t);
 
 		obj->programs[Scene::Object::ProgramTypeDefault] = texture_program_info;
 		if (t->name == "Platform") {
 			obj->programs[Scene::Object::ProgramTypeDefault].textures[0] = *wood_tex;
-		} else if (t->name == "Pedestal") {
+		} else if (t->name == "Spot1") {
+      spot1 = obj;
 			obj->programs[Scene::Object::ProgramTypeDefault].textures[0] = *marble_tex;
+    }
+    else if (t->name == "Spot2") {
+      spot2 = obj;
+      obj->programs[Scene::Object::ProgramTypeDefault].textures[0] = *marble_tex;
+    }
+    else if (t->name == "Spot3") {
+      spot3 = obj;
+      obj->programs[Scene::Object::ProgramTypeDefault].textures[0] = *marble_tex;
+    }
+    else if (t->name == "Spot4") {
+      spot4 = obj;
+      obj->programs[Scene::Object::ProgramTypeDefault].textures[0] = *marble_tex;
 		} else {
 			obj->programs[Scene::Object::ProgramTypeDefault].textures[0] = *white_tex;
 		}
@@ -230,7 +282,7 @@ bool GameMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		return false;
 	}
 
-	if (evt.type == SDL_MOUSEMOTION) {
+	/*if (evt.type == SDL_MOUSEMOTION) {
 		if (evt.motion.state & SDL_BUTTON(SDL_BUTTON_LEFT)) {
 			camera_spin += 5.0f * evt.motion.xrel / float(window_size.x);
 			return true;
@@ -240,14 +292,74 @@ bool GameMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		}
 
-	}
+	}*/
+  if (evt.type == SDL_KEYDOWN){
+    if (evt.key.keysym.scancode == SDL_SCANCODE_R) {
+      activate_spot(1);
+      return true;
+    }
+    if (evt.key.keysym.scancode == SDL_SCANCODE_B) {
+      activate_spot(2);
+      return true;
+    }
+    if (evt.key.keysym.scancode == SDL_SCANCODE_G) {
+      activate_spot(3);
+      return true;
+    }
+    if (evt.key.keysym.scancode == SDL_SCANCODE_Y) {
+      activate_spot(4);
+      return true;
+    }
+  }
+
 
 	return false;
+}
+
+void set_spot(int spot, bool active) {
+  if (spot == 1) {
+    spot1->programs[Scene::Object::ProgramTypeDefault].textures[0] = active ? *marble1_tex : *marble_tex;
+    if (active) ding1->play(camera->transform->position, 1.0f, Sound::Once);
+  }
+  if (spot == 2) {
+    spot2->programs[Scene::Object::ProgramTypeDefault].textures[0] = active ? *marble2_tex : *marble_tex;
+    if (active) ding2->play(camera->transform->position, 1.0f, Sound::Once);
+  }
+  if (spot == 3) {
+    spot3->programs[Scene::Object::ProgramTypeDefault].textures[0] = active ? *marble3_tex : *marble_tex;
+    if (active) ding3->play(camera->transform->position, 1.0f, Sound::Once);
+  }
+  if (spot == 4) {
+    spot4->programs[Scene::Object::ProgramTypeDefault].textures[0] = active ? *marble4_tex : *marble_tex;
+    if (active) ding4->play(camera->transform->position, 1.0f, Sound::Once);
+  }
+}
+
+void GameMode::activate_spot(int spot) {
+  //if it's the first spot in the vector: pop from the front
+  //else restart
+
+  set_spot(spot, true);
 }
 
 void GameMode::update(float elapsed) {
 	camera_parent_transform->rotation = glm::angleAxis(camera_spin, glm::vec3(0.0f, 0.0f, 1.0f));
 	spot_parent_transform->rotation = glm::angleAxis(spot_spin, glm::vec3(0.0f, 0.0f, 1.0f));
+
+  state_time += elapsed;
+  if (state_time > state_length) {
+    state_time = 0.0f;
+    state++;
+    if (state % 2 == 0) {
+      set_spot(state / 2, false);
+    }
+    else {
+      set_spot((state+1) / 2, true);
+    }
+    if (state > 2 * seq_length) {
+      state = 0;
+    }
+  }
 }
 
 //GameMode will render to some offscreen framebuffer(s).
